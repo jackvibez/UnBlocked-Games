@@ -1,0 +1,104 @@
+[
+  {
+    "id": "sector-defense",
+    "title": "Sector Defense",
+    "category": "Action",
+    "controls": "Arrow Keys / A-D · Space to Fire",
+    "description": "Pilot an interceptor across escalating waves of incoming drone formations with rapid plasma bursts.",
+    "thumbnail": "/src/assets/images/game_sector_defense_1794962602691.jpg",
+    "featured": true,
+    "iframe": {
+      "src": "/games/sector-defense.html",
+      "title": "Sector Defense — Unblocked HTML5 Game",
+      "width": "100%",
+      "height": "100%",
+      "allow": "fullscreen",
+      "sandbox": "allow-scripts allow-same-origin"
+    }
+  },
+  {
+    "id": "grid-snake",
+    "title": "Grid Snake",
+    "category": "Arcade",
+    "controls": "Arrow Keys / WASD · P to Pause",
+    "description": "Navigate the blueprint arena, collect golden cores to grow longer, and survive as speed ramps up.",
+    "thumbnail": "/src/assets/images/game_grid_snake_1794962599998.jpg",
+    "featured": false,
+    "iframe": {
+      "src": "/games/grid-snake.html",
+      "title": "Grid Snake — Unblocked HTML5 Game",
+      "width": "100%",
+      "height": "100%",
+      "allow": "fullscreen",
+      "sandbox": "allow-scripts allow-same-origin"
+    }
+  },
+  {
+    "id": "brick-breaker",
+    "title": "Brick Breaker",
+    "category": "Arcade",
+    "controls": "Mouse / Arrow Keys · Space to Launch",
+    "description": "Deflect the energy sphere off your paddle to shatter multi-layer brick walls and clear each stage.",
+    "thumbnail": "/src/assets/images/game_brick_breaker_1794962600393.jpg",
+    "featured": false,
+    "iframe": {
+      "src": "/games/brick-breaker.html",
+      "title": "Brick Breaker — Unblocked HTML5 Game",
+      "width": "100%",
+      "height": "100%",
+      "allow": "fullscreen",
+      "sandbox": "allow-scripts allow-same-origin"
+    }
+  },
+  {
+    "id": "tile-2048",
+    "title": "Tile 2048",
+    "category": "Puzzle",
+    "controls": "Arrow Keys / WASD / Swipe",
+    "description": "Slide matching numbered tiles together on a 4x4 grid to double their value and reach the 2048 tile.",
+    "thumbnail": "/src/assets/images/game_tile_2048_1794962602003.jpg",
+    "featured": false,
+    "iframe": {
+      "src": "/games/tile-2048.html",
+      "title": "Tile 2048 — Unblocked HTML5 Game",
+      "width": "100%",
+      "height": "100%",
+      "allow": "fullscreen",
+      "sandbox": "allow-scripts allow-same-origin"
+    }
+  },
+  {
+    "id": "block-stack",
+    "title": "Block Stack",
+    "category": "Puzzle",
+    "controls": "Arrows to Move/Rotate · Space Drop",
+    "description": "Rotate and place falling tetrominoes to complete horizontal lines before the stack reaches the top.",
+    "thumbnail": "/src/assets/images/game_block_stack_1794962601223.jpg",
+    "featured": false,
+    "iframe": {
+      "src": "/games/block-stack.html",
+      "title": "Block Stack — Unblocked HTML5 Game",
+      "width": "100%",
+      "height": "100%",
+      "allow": "fullscreen",
+      "sandbox": "allow-scripts allow-same-origin"
+    }
+  },
+  {
+    "id": "court-pong",
+    "title": "Court Pong",
+    "category": "Sports",
+    "controls": "Mouse / W-S / Up-Down",
+    "description": "Face off against an adaptive paddle rival in a fast-paced match with angled spin shots to 7 points.",
+    "thumbnail": "/src/assets/images/game_court_pong_1794962602289.jpg",
+    "featured": false,
+    "iframe": {
+      "src": "/games/court-pong.html",
+      "title": "Court Pong — Unblocked HTML5 Game",
+      "width": "100%",
+      "height": "100%",
+      "allow": "fullscreen",
+      "sandbox": "allow-scripts allow-same-origin"
+    }
+  }
+]

@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Court Pong</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #0b0d12;
+        color: #f3f5f8;
+        font-family: system-ui, -apple-system, sans-serif;
+        user-select: none;
+      }
+      .wrap {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 12px;
+        gap: 10px;
+      }
+      .hud {
+        width: 100%;
+        max-width: 760px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 14px;
+        background: #161a22;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        font-size: 14px;
+        font-variant-numeric: tabular-nums;
+      }
+      .hud-stats {
+        display: flex;
+        gap: 20px;
+      }
+      .hud-label {
+        color: #8b95a5;
+        margin-right: 6px;
+      }
+      .hud-val {
+        font-weight: 700;
+      }
+      .hud-btn {
+        background: #212733;
+        color: #f3f5f8;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 6px;
+        padding: 5px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .stage {
+        position: relative;
+        width: 100%;
+        max-width: 760px;
+        flex: 1;
+        min-height: 0;
+      }
+      canvas {
+        width: 100%;
+        height: 100%;
+        background: #10151d;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        display: block;
+      }
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 24px;
+        background: rgba(11, 13, 18, 0.85);
+        border-radius: 12px;
+      }
+      .overlay[hidden] {
+        display: none;
+      }
+      .overlay h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+      }
+      .overlay p {
+        margin: 0 0 18px;
+        color: #9aa4b2;
+        font-size: 14px;
+        max-width: 360px;
+      }
+      .btn-play {
+        background: #f59e0b;
+        color: #11141a;
+        border: 0;
+        border-radius: 8px;
+        padding: 11px 22px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="hud">
+        <div class="hud-stats">
+          <div><span class="hud-label">You</span><span id="playerScore" class="hud-val">0</span></div>
+          <div><span class="hud-label">Rival</span><span id="cpuScore" class="hud-val">0</span></div>
+          <div><span class="hud-label">Target</span><span class="hud-val">7</span></div>
+        </div>
+        <button type="button" id="speedBtn" class="hud-btn">Pace: Standard</button>
+      </div>
+
+      <div class="stage">
+        <canvas id="canvas" width="760" height="480"></canvas>
+        <div id="overlay" class="overlay">
+          <h1 id="overlayTitle">Court Pong</h1>
+          <p id="overlayText">Control the left paddle using your mouse, W/S, or Up/Down arrow keys. First to 7 points wins the match.</p>
+          <button type="button" id="startBtn" class="btn-play">Start Match</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      const overlay = document.getElementById('overlay');
+      const overlayTitle = document.getElementById('overlayTitle');
+      const overlayText = document.getElementById('overlayText');
+      const startBtn = document.getElementById('startBtn');
+      const speedBtn = document.getElementById('speedBtn');
+      const pScoreEl = document.getElementById('playerScore');
+      const cScoreEl = document.getElementById('cpuScore');
+
+      const keys = {};
+      let fastMode = false;
+      let match = null;
+      let lastTime = 0;
+
+      speedBtn.addEventListener('click', () => {
+        fastMode = !fastMode;
+        speedBtn.textContent = fastMode ? 'Pace: Fast' : 'Pace: Standard';
+      });
+
+      function resetServe(dir = 1) {
+        const base = fastMode ? 410 : 340;
+        const angle = (Math.random() * 0.6 - 0.3);
+        match.ball = {
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          r: 8,
+          vx: Math.cos(angle) * base * dir,
+          vy: Math.sin(angle) * base,
+        };
+      }
+
+      function startMatch() {
+        match = {
+          running: true,
+          pScore: 0,
+          cScore: 0,
+          player: { x: 26, y: canvas.height / 2, w: 12, h: 86 },
+          cpu: { x: canvas.width - 38, y: canvas.height / 2, w: 12, h: 86 },
+          ball: null,
+        };
+        resetServe(Math.random() > 0.5 ? 1 : -1);
+        syncHud();
+        overlay.hidden = true;
+      }
+
+      function syncHud() {
+        pScoreEl.textContent = match.pScore;
+        cScoreEl.textContent = match.cScore;
+      }
+
+      window.addEventListener('keydown', (e) => {
+        if (['ArrowUp', 'ArrowDown', ' '].includes(e.key)) e.preventDefault();
+        keys[e.code] = true;
+      });
+      window.addEventListener('keyup', (e) => {
+        keys[e.code] = false;
+      });
+
+      canvas.addEventListener('mousemove', (e) => {
+        if (!match || !match.running) return;
+        const rect = canvas.getBoundingClientRect();
+        const scaleY = canvas.height / rect.height;
+        match.player.y = Math.max(
+          match.player.h / 2 + 8,
+          Math.min(canvas.height - match.player.h / 2 - 8, (e.clientY - rect.top) * scaleY)
+        );
+      });
+
+      function update(dt) {
+        if (!match || !match.running) return;
+        const p = match.player;
+        const c = match.cpu;
+        const b = match.ball;
+
+        if (keys['ArrowUp'] || keys['KeyW']) p.y -= 420 * dt;
+        if (keys['ArrowDown'] || keys['KeyS']) p.y += 420 * dt;
+        p.y = Math.max(p.h / 2 + 8, Math.min(canvas.height - p.h / 2 - 8, p.y));
+
+        const cpuSpeed = fastMode ? 330 : 275;
+        if (c.y < b.y - 10) c.y += cpuSpeed * dt;
+        else if (c.y > b.y + 10) c.y -= cpuSpeed * dt;
+        c.y = Math.max(c.h / 2 + 8, Math.min(canvas.height - c.h / 2 - 8, c.y));
+
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+
+        if (b.y - b.r < 8) {
+          b.y = 8 + b.r;
+          b.vy = Math.abs(b.vy);
+        } else if (b.y + b.r > canvas.height - 8) {
+          b.y = canvas.height - 8 - b.r;
+          b.vy = -Math.abs(b.vy);
+        }
+
+        if (
+          b.vx < 0 &&
+          b.x - b.r <= p.x + p.w &&
+          b.x + b.r >= p.x &&
+          b.y >= p.y - p.h / 2 - 4 &&
+          b.y <= p.y + p.h / 2 + 4
+        ) {
+          const hit = (b.y - p.y) / (p.h / 2);
+          const spd = Math.min(680, Math.hypot(b.vx, b.vy) * 1.04);
+          const ang = hit * (Math.PI / 3.5);
+          b.vx = Math.cos(ang) * spd;
+          b.vy = Math.sin(ang) * spd;
+          b.x = p.x + p.w + b.r;
+        }
+
+        if (
+          b.vx > 0 &&
+          b.x + b.r >= c.x &&
+          b.x - b.r <= c.x + c.w &&
+          b.y >= c.y - c.h / 2 - 4 &&
+          b.y <= c.y + c.h / 2 + 4
+        ) {
+          const hit = (b.y - c.y) / (c.h / 2);
+          const spd = Math.min(680, Math.hypot(b.vx, b.vy) * 1.04);
+          const ang = hit * (Math.PI / 3.5);
+          b.vx = -Math.cos(ang) * spd;
+          b.vy = Math.sin(ang) * spd;
+          b.x = c.x - b.r;
+        }
+
+        if (b.x < -16) {
+          match.cScore += 1;
+          syncHud();
+          if (match.cScore >= 7) return finishMatch(false);
+          resetServe(1);
+        } else if (b.x > canvas.width + 16) {
+          match.pScore += 1;
+          syncHud();
+          if (match.pScore >= 7) return finishMatch(true);
+          resetServe(-1);
+        }
+      }
+
+      function finishMatch(won) {
+        match.running = false;
+        overlayTitle.textContent = won ? 'Match Won' : 'Match Lost';
+        overlayText.textContent = `Final score: You ${match.pScore} — Rival ${match.cScore}`;
+        startBtn.textContent = 'Play Again';
+        overlay.hidden = false;
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.setLineDash([10, 10]);
+        ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(canvas.width / 2, 12);
+        ctx.lineTo(canvas.width / 2, canvas.height - 12);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        if (!match) return;
+
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.roundRect(match.player.x, match.player.y - match.player.h / 2, match.player.w, match.player.h, 4);
+        ctx.fill();
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.roundRect(match.cpu.x, match.cpu.y - match.cpu.h / 2, match.cpu.w, match.cpu.h, 4);
+        ctx.fill();
+
+        ctx.fillStyle = '#f8fafc';
+        ctx.beginPath();
+        ctx.arc(match.ball.x, match.ball.y, match.ball.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function loop(ts) {
+        const dt = Math.min(0.03, (ts - lastTime) / 1000 || 0);
+        lastTime = ts;
+        update(dt);
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      startBtn.addEventListener('click', startMatch);
+      requestAnimationFrame(loop);
+    </script>
+  </body>
+</html>

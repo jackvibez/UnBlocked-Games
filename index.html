@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ArcadeVault — Unblocked Iframe Games</title>
+    <meta
+      name="description"
+      content="A fast, JSON-powered unblocked games library where every playable game loads cleanly inside an iframe."
+    />
+    <meta property="og:title" content="ArcadeVault — Unblocked Iframe Games" />
+    <meta
+      property="og:description"
+      content="A fast, JSON-powered unblocked games library where every playable game loads cleanly inside an iframe."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a href="#browse" class="brand" id="brandLink">ArcadeVault</a>
+
+        <nav class="topnav" aria-label="Primary navigation">
+          <button type="button" class="nav-link is-active" data-view="browse">Browse</button>
+          <button type="button" class="nav-link" data-view="favorites">Favorites</button>
+          <button type="button" class="nav-link" data-view="recent">Recent</button>
+          <button type="button" class="nav-link" id="openJsonBtn">JSON Catalog</button>
+        </nav>
+
+        <div class="topbar-actions">
+          <button type="button" class="btn-primary" id="openAddGameBtn">Add Game</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-shell">
+      <!-- Game Player Stage (Hidden until a game is launched) -->
+      <section id="playerSection" class="player-section" hidden aria-label="Active game player">
+        <div class="player-toolbar">
+          <div class="player-toolbar-left">
+            <button type="button" class="btn-secondary" id="backToCatalogBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M19 12H5" />
+                <path d="m12 19-7-7 7-7" />
+              </svg>
+              <span>Back to Games</span>
+            </button>
+            <div class="player-title-group">
+              <h1 id="playerTitle" class="player-title">Game Title</h1>
+              <p id="playerMeta" class="player-meta">Category · Controls</p>
+            </div>
+          </div>
+
+          <div class="player-toolbar-actions">
+            <button type="button" class="btn-ghost" id="playerFavoriteBtn" aria-pressed="false">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+              </svg>
+              <span id="playerFavoriteLabel">Favorite</span>
+            </button>
+            <button type="button" class="btn-ghost" id="reloadGameBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+              <span>Reload</span>
+            </button>
+            <button type="button" class="btn-ghost" id="inspectIframeBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="16 18 22 12 16 6" />
+                <polyline points="8 6 2 12 8 18" />
+              </svg>
+              <span>Iframe JSON</span>
+            </button>
+            <button type="button" class="btn-primary" id="fullscreenBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+                <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+                <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+                <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+              </svg>
+              <span>Fullscreen</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="iframeStage" class="iframe-stage">
+          <div id="iframeMount" class="iframe-mount"></div>
+        </div>
+
+        <div id="iframeInspector" class="iframe-inspector" hidden>
+          <div class="inspector-header">
+            <span class="inspector-heading">Stored JSON Entry &amp; Rendered Iframe</span>
+            <button type="button" class="btn-ghost btn-sm" id="copyEntryJsonBtn">Copy Entry</button>
+          </div>
+          <pre id="iframeInspectorCode" class="code-block"></pre>
+        </div>
+      </section>
+
+      <!-- Catalog View -->
+      <div id="catalogView">
+        <!-- Featured Hero Split -->
+        <section id="heroSection" class="hero-section" aria-label="Featured game">
+          <div class="hero-card">
+            <div class="hero-copy">
+              <p class="hero-kicker">Featured Game</p>
+              <h1 id="heroTitle" class="hero-title">Instant Browser Arcade</h1>
+              <p id="heroDescription" class="hero-description">
+                Every title in this library is defined inside a portable JSON catalog and runs directly in a clean, unblocked iframe stage.
+              </p>
+              <p id="heroMeta" class="hero-meta"></p>
+              <div class="hero-actions">
+                <button type="button" class="btn-primary btn-lg" id="heroPlayBtn">Play Now</button>
+                <button type="button" class="btn-secondary btn-lg" id="heroSurpriseBtn">Random Game</button>
+              </div>
+            </div>
+            <div class="hero-media">
+              <div class="media-fallback" aria-hidden="true">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="2" y="6" width="20" height="12" rx="2" />
+                  <path d="M6 12h4" />
+                  <path d="M8 10v4" />
+                  <circle cx="15" cy="11" r="1" />
+                  <circle cx="17" cy="13" r="1" />
+                </svg>
+              </div>
+              <img
+                id="heroImage"
+                src=""
+                alt="Featured game cover"
+                referrerpolicy="no-referrer"
+              />
+            </div>
+          </div>
+        </section>
+
+        <!-- Catalog Filter Toolbar -->
+        <section class="catalog-section" aria-label="Games catalog">
+          <div class="catalog-header">
+            <div class="catalog-title-block">
+              <h2 id="catalogHeading" class="section-heading">All Games</h2>
+              <span id="catalogCount" class="catalog-count tabular-nums">0 games</span>
+            </div>
+
+            <div class="catalog-controls">
+              <div class="search-field">
+                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+                <input
+                  type="search"
+                  id="searchInput"
+                  placeholder="Search games..."
+                  aria-label="Search games"
+                  autocomplete="off"
+                />
+              </div>
+
+              <div class="filter-tabs" id="categoryTabs" role="tablist" aria-label="Game categories">
+                <button type="button" class="filter-tab is-active" data-category="All" role="tab" aria-selected="true">All</button>
+                <button type="button" class="filter-tab" data-category="Arcade" role="tab" aria-selected="false">Arcade</button>
+                <button type="button" class="filter-tab" data-category="Puzzle" role="tab" aria-selected="false">Puzzle</button>
+                <button type="button" class="filter-tab" data-category="Action" role="tab" aria-selected="false">Action</button>
+                <button type="button" class="filter-tab" data-category="Sports" role="tab" aria-selected="false">Sports</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="catalogStatus" class="catalog-status" hidden></div>
+          <div id="gamesGrid" class="games-grid"></div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <span>ArcadeVault</span>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <span>Games stored as iframe definitions in games.json</span>
+      </div>
+    </footer>
+
+    <!-- JSON Catalog Modal -->
+    <div id="jsonModal" class="modal-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="jsonModalTitle">
+      <div class="modal-panel modal-panel-wide">
+        <div class="modal-header">
+          <div>
+            <h2 id="jsonModalTitle" class="modal-title">games.json Catalog</h2>
+            <p class="modal-subtitle">Each game entry defines the iframe source, sandbox attributes, and metadata.</p>
+          </div>
+          <button type="button" class="btn-icon" data-close-modal="jsonModal" aria-label="Close JSON catalog">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <pre id="jsonCatalogPreview" class="code-block code-block-tall"></pre>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="copyAllJsonBtn">Copy JSON</button>
+          <button type="button" class="btn-primary" id="downloadJsonBtn">Download games.json</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Custom Iframe Game Modal -->
+    <div id="addGameModal" class="modal-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="addGameModalTitle">
+      <div class="modal-panel">
+        <div class="modal-header">
+          <div>
+            <h2 id="addGameModalTitle" class="modal-title">Add Iframe Game</h2>
+            <p class="modal-subtitle">Append a new iframe game to your local catalog and exportable JSON.</p>
+          </div>
+          <button type="button" class="btn-icon" data-close-modal="addGameModal" aria-label="Close add game modal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </div>
+        <form id="addGameForm" class="modal-body form-stack">
+          <div class="form-row">
+            <label for="gameTitleInput" class="form-label">Game Title</label>
+            <input type="text" id="gameTitleInput" class="form-input" required maxlength="60" placeholder="e.g. Retro Lander" />
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-row">
+              <label for="gameCategoryInput" class="form-label">Category</label>
+              <select id="gameCategoryInput" class="form-input">
+                <option value="Arcade">Arcade</option>
+                <option value="Puzzle">Puzzle</option>
+                <option value="Action">Action</option>
+                <option value="Sports">Sports</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label for="gameControlsInput" class="form-label">Controls</label>
+              <input type="text" id="gameControlsInput" class="form-input" maxlength="60" placeholder="Arrow Keys / Mouse" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="gameIframeInput" class="form-label">Iframe URL or &lt;iframe&gt; Embed Code</label>
+            <textarea
+              id="gameIframeInput"
+              class="form-input form-textarea"
+              required
+              rows="3"
+              placeholder='https://example.com/game.html or <iframe src="/games/grid-snake.html"></iframe>'
+            ></textarea>
+          </div>
+
+          <div class="form-row">
+            <label for="gameDescInput" class="form-label">Description</label>
+            <input type="text" id="gameDescInput" class="form-input" maxlength="160" placeholder="Short summary of how to play" />
+          </div>
+
+          <p id="addGameError" class="form-error" hidden></p>
+
+          <div class="modal-footer modal-footer-inline">
+            <button type="button" class="btn-secondary" data-close-modal="addGameModal">Cancel</button>
+            <button type="submit" class="btn-primary">Save to Catalog</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script type="module" src="/src/app.js"></script>
+  </body>
+</html>

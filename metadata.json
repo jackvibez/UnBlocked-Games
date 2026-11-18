@@ -1,0 +1,6 @@
+{
+  "name": "ArcadeVault",
+  "description": "A fast, JSON-powered unblocked games library where every playable game loads cleanly inside an iframe.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

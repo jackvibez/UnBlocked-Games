@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tile 2048</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #0b0d12;
+        color: #f3f5f8;
+        font-family: system-ui, -apple-system, sans-serif;
+        user-select: none;
+      }
+      .wrap {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 14px;
+        gap: 12px;
+      }
+      .hud {
+        width: 100%;
+        max-width: 440px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        background: #161a22;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        font-variant-numeric: tabular-nums;
+      }
+      .hud-stats {
+        display: flex;
+        gap: 18px;
+        font-size: 14px;
+      }
+      .hud-label {
+        color: #8b95a5;
+        margin-right: 4px;
+      }
+      .hud-val {
+        font-weight: 700;
+      }
+      .hud-btn {
+        background: #f59e0b;
+        color: #11141a;
+        border: 0;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .board-wrap {
+        position: relative;
+        width: 100%;
+        max-width: 440px;
+        aspect-ratio: 1 / 1;
+        background: #181c24;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 12px;
+      }
+      .grid {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(4, 1fr);
+        gap: 10px;
+      }
+      .cell {
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        font-weight: 800;
+        background: #222834;
+        color: #f3f5f8;
+        transition: transform 90ms ease;
+      }
+      .v2 { background: #334155; color: #f8fafc; }
+      .v4 { background: #475569; color: #f8fafc; }
+      .v8 { background: #d97706; color: #fff; }
+      .v16 { background: #ea580c; color: #fff; }
+      .v32 { background: #dc2626; color: #fff; }
+      .v64 { background: #b91c1c; color: #fff; }
+      .v128 { background: #eab308; color: #11141a; font-size: 24px; }
+      .v256 { background: #f59e0b; color: #11141a; font-size: 24px; }
+      .v512 { background: #10b981; color: #0b0d12; font-size: 24px; }
+      .v1024 { background: #06b6d4; color: #0b0d12; font-size: 20px; }
+      .v2048 { background: #fbbf24; color: #11141a; font-size: 20px; }
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 24px;
+        background: rgba(11, 13, 18, 0.86);
+        border-radius: 14px;
+      }
+      .overlay[hidden] {
+        display: none;
+      }
+      .overlay h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+      }
+      .overlay p {
+        margin: 0 0 18px;
+        color: #9aa4b2;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="hud">
+        <div class="hud-stats">
+          <div><span class="hud-label">Score</span><span id="scoreVal" class="hud-val">0</span></div>
+          <div><span class="hud-label">Best</span><span id="bestVal" class="hud-val">0</span></div>
+        </div>
+        <button type="button" id="newBtn" class="hud-btn">New Game</button>
+      </div>
+
+      <div class="board-wrap" id="boardWrap">
+        <div class="grid" id="grid"></div>
+        <div id="overlay" class="overlay" hidden>
+          <h1 id="overlayTitle">No Moves Left</h1>
+          <p id="overlayText"></p>
+          <button type="button" id="retryBtn" class="hud-btn">Play Again</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const gridEl = document.getElementById('grid');
+      const scoreEl = document.getElementById('scoreVal');
+      const bestEl = document.getElementById('bestVal');
+      const newBtn = document.getElementById('newBtn');
+      const retryBtn = document.getElementById('retryBtn');
+      const overlay = document.getElementById('overlay');
+      const overlayTitle = document.getElementById('overlayTitle');
+      const overlayText = document.getElementById('overlayText');
+      const boardWrap = document.getElementById('boardWrap');
+
+      const BEST_KEY = 'arcadevault_2048_best';
+      let best = Number(localStorage.getItem(BEST_KEY) || 0);
+      bestEl.textContent = best;
+
+      let board = [];
+      let score = 0;
+      let wonShown = false;
+
+      function initGame() {
+        board = Array.from({ length: 4 }, () => Array(4).fill(0));
+        score = 0;
+        wonShown = false;
+        overlay.hidden = true;
+        spawnTile();
+        spawnTile();
+        render();
+      }
+
+      function spawnTile() {
+        const empty = [];
+        for (let r = 0; r < 4; r++) {
+          for (let c = 0; c < 4; c++) {
+            if (board[r][c] === 0) empty.push({ r, c });
+          }
+        }
+        if (empty.length === 0) return;
+        const pick = empty[Math.floor(Math.random() * empty.length)];
+        board[pick.r][pick.c] = Math.random() < 0.9 ? 2 : 4;
+      }
+
+      function slideLine(line) {
+        const filtered = line.filter((v) => v !== 0);
+        const result = [];
+        let points = 0;
+        for (let i = 0; i < filtered.length; i++) {
+          if (filtered[i] === filtered[i + 1]) {
+            const merged = filtered[i] * 2;
+            result.push(merged);
+            points += merged;
+            i++;
+          } else {
+            result.push(filtered[i]);
+          }
+        }
+        while (result.length < 4) result.push(0);
+        return { result, points };
+      }
+
+      function move(dir) {
+        const prev = JSON.stringify(board);
+        let gained = 0;
+
+        if (dir === 'left' || dir === 'right') {
+          for (let r = 0; r < 4; r++) {
+            const line = dir === 'left' ? [...board[r]] : [...board[r]].reverse();
+            const { result, points } = slideLine(line);
+            gained += points;
+            board[r] = dir === 'left' ? result : result.reverse();
+          }
+        } else {
+          for (let c = 0; c < 4; c++) {
+            const col = [board[0][c], board[1][c], board[2][c], board[3][c]];
+            const line = dir === 'up' ? col : col.reverse();
+            const { result, points } = slideLine(line);
+            gained += points;
+            const finalCol = dir === 'up' ? result : result.reverse();
+            for (let r = 0; r < 4; r++) board[r][c] = finalCol[r];
+          }
+        }
+
+        if (JSON.stringify(board) !== prev) {
+          score += gained;
+          spawnTile();
+          render();
+          checkStatus();
+        }
+      }
+
+      function hasMoves() {
+        for (let r = 0; r < 4; r++) {
+          for (let c = 0; c < 4; c++) {
+            if (board[r][c] === 0) return true;
+            if (r < 3 && board[r][c] === board[r + 1][c]) return true;
+            if (c < 3 && board[r][c] === board[r][c + 1]) return true;
+          }
+        }
+        return false;
+      }
+
+      function checkStatus() {
+        if (!wonShown && board.some((row) => row.includes(2048))) {
+          wonShown = true;
+          overlayTitle.textContent = '2048 Reached';
+          overlayText.textContent = `Score: ${score}. Keep sliding or start fresh.`;
+          retryBtn.textContent = 'Continue';
+          overlay.hidden = false;
+          retryBtn.onclick = () => {
+            overlay.hidden = true;
+            retryBtn.textContent = 'Play Again';
+            retryBtn.onclick = initGame;
+          };
+          return;
+        }
+        if (!hasMoves()) {
+          overlayTitle.textContent = 'No Moves Left';
+          overlayText.textContent = `Final score: ${score}`;
+          retryBtn.textContent = 'Play Again';
+          retryBtn.onclick = initGame;
+          overlay.hidden = false;
+        }
+      }
+
+      function render() {
+        scoreEl.textContent = score;
+        if (score > best) {
+          best = score;
+          localStorage.setItem(BEST_KEY, String(best));
+          bestEl.textContent = best;
+        }
+        gridEl.innerHTML = '';
+        for (let r = 0; r < 4; r++) {
+          for (let c = 0; c < 4; c++) {
+            const val = board[r][c];
+            const cell = document.createElement('div');
+            cell.className = val ? `cell v${Math.min(val, 2048)}` : 'cell';
+            cell.textContent = val ? String(val) : '';
+            gridEl.appendChild(cell);
+          }
+        }
+      }
+
+      window.addEventListener('keydown', (e) => {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+          e.preventDefault();
+        }
+        const map = {
+          ArrowLeft: 'left',
+          KeyA: 'left',
+          ArrowRight: 'right',
+          KeyD: 'right',
+          ArrowUp: 'up',
+          KeyW: 'up',
+          ArrowDown: 'down',
+          KeyS: 'down',
+        };
+        if (map[e.code] && overlay.hidden) move(map[e.code]);
+      });
+
+      let touchStart = null;
+      boardWrap.addEventListener('touchstart', (e) => {
+        touchStart = e.touches[0];
+      });
+      boardWrap.addEventListener('touchend', (e) => {
+        if (!touchStart || !overlay.hidden) return;
+        const dx = e.changedTouches[0].clientX - touchStart.clientX;
+        const dy = e.changedTouches[0].clientY - touchStart.clientY;
+        if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+        if (Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? 'right' : 'left');
+        else move(dy > 0 ? 'down' : 'up');
+      });
+
+      newBtn.addEventListener('click', initGame);
+      retryBtn.onclick = initGame;
+      initGame();
+    </script>
+  </body>
+</html>
